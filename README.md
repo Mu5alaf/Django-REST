@@ -259,3 +259,32 @@ class orderSerializer(serializers.ModelSerializer):
         "total_price": 749.95
     },
 ````
+
+## Serializer Subclasses abd Aggregated API data
+
+- is a basic serializer where you manually define fields and behavior.
+
+**Declaring Serializers**
+
+````python
+class ProudctInfoSerializer(serializers.Serializer):
+    #get all proudcts
+    products = ProductSerializers(many=True)
+    count = serializers.IntegerField()
+    max_price = serializers.FloatField()
+    
+````
+
+````python
+@api_view(['GET'])
+def product_info(request):
+    products = Product.objects.all()
+    serializer = ProudctInfoSerializer({
+        'products':products,
+        'count':len(products),
+        'max_price':products.aggregate(max_price=Max('price'))['max_price']
+    })
+    
+    return Response(serializer.data)
+    
+````
