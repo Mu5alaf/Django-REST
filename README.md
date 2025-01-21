@@ -21,7 +21,7 @@ The ModelSerializer class provides a shortcut that lets you automatically create
 
 1- model.py
 
-```` python
+````python
   class Product(models.Model):
       name = models.CharField(max_length=200)
       description = models.TextField()
@@ -43,7 +43,7 @@ class ProductSerializers(serializers.ModelSerializer):
             'price',
             'stock',
         )
-    
+  
     #validation
     def vaildate_price(self, value):
         if value <= 0 :
@@ -53,16 +53,16 @@ class ProductSerializers(serializers.ModelSerializer):
 
 - The ModelSerializer class is the same as a regular Serializer class, except that:
 
-    1. It will automatically generate a set of fields for you, based on the model.
-    2. It will automatically generate validators for the serializer, such as unique_togethe validators.
-    3. It includes simple default implementations of .create() and .update().
+  1. It will automatically generate a set of fields for you, based on the model.
+  2. It will automatically generate validators for the serializer, such as unique_togethe validators.
+  3. It includes simple default implementations of .create() and .update().
 
 ## How to set Field level Validation on serialises
 
 - we have `price` field in our model and we need to make sure the price not less than zero
-we can write a  custom field-level validation by adding .validate_<field_name> methods to our Serializer subclass. These are similar to the .clean_<field_name> methods on Django forms.
+  we can write a  custom field-level validation by adding .validate_<field_name> methods to our Serializer subclass. These are similar to the .clean_<field_name> methods on Django forms.
 
-  ```` python
+  ````python
 
     def vaildate_price(self, value):
         if value <= 0 :
@@ -74,7 +74,7 @@ we can write a  custom field-level validation by adding .validate_<field_name> m
 ## Responses
 
 - Unlike regular HttpResponse objects, you do not instantiate Response objects with rendered content. Instead you pass in unrendered data, which may consist of any Python primitives.
-  
+
   ````python
     @api_view(['GET'])
     def product_list(request):
@@ -90,7 +90,7 @@ we can write a  custom field-level validation by adding .validate_<field_name> m
 **Nested Serializers**
 
 - To easily join parent and child objects inside a single response body, you can use a nested serializer.
-  
+
 ````python
 
   class orderSerializer(serializers.ModelSerializer):
@@ -119,7 +119,6 @@ class orderSerializer(serializers.ModelSerializer):
 
 <img src="./images/s.png" alt="Picture" width="auto" height="auto">
 
-
 **Serializer Relations**
 
 -Relational fields are used to represent model relationships. They can be applied to ForeignKey, ManyToManyField and OneToOneField relationships, as well as to reverse relationships, and custom relationships such as GenericForeignKey.
@@ -130,7 +129,7 @@ class orderSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name')
     product_price = serializers.DecimalField(source='product.price',max_digits=10, decimal_places=2)
-    
+  
     class Meta:
         model = OrderItem
         fields = (
@@ -144,7 +143,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class orderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     total_price = serializers.SerializerMethodField(method_name="total")
-    
+  
     def total(self,obj):
         order_items = obj.items.all()
         return sum (order_items.item_subtotal for order_items in order_items)
@@ -163,7 +162,7 @@ class orderSerializer(serializers.ModelSerializer):
 **Nested relationships**
 
 - As opposed to previously discussed references to another entity, the referred entity can instead also be embedded or nested in the representation of the object that refers to it. Such nested relationships can be expressed by using serializers as fields.
-If the field is used to represent a to-many relationship, you should add the many=True flag to the serializer field.
+  If the field is used to represent a to-many relationship, you should add the many=True flag to the serializer field.
 
 ````python
 class TrackSerializer(serializers.ModelSerializer):
@@ -197,12 +196,12 @@ class AlbumSerializer(serializers.ModelSerializer):
 **Serializer fields**
 
 - Serializer fields handle converting between primitive values and internal datatypes. They also deal with validating input values, as well as retrieving and setting the values from their parent objects.
-  
+
 ````python
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name')
     product_price = serializers.DecimalField(source='product.price',max_digits=10, decimal_places=2)
-    
+  
     class Meta:
         model = OrderItem
         fields = (
@@ -218,11 +217,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
 ````python
 class orderSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField(method_name="total")
-    
+  
     def total(self,obj):
         order_items = obj.items.all()
         return sum (order_items.item_subtotal for order_items in order_items)
-    
+  
     class Meta:
         model = Order
         fields = (
@@ -264,7 +263,7 @@ class orderSerializer(serializers.ModelSerializer):
 
 - is a basic serializer where you manually define fields and behavior.
 
-**Declaring Serializers**
+Declaring Serializers
 
 ````python
 class ProudctInfoSerializer(serializers.Serializer):
@@ -272,7 +271,7 @@ class ProudctInfoSerializer(serializers.Serializer):
     products = ProductSerializers(many=True)
     count = serializers.IntegerField()
     max_price = serializers.FloatField()
-    
+  
 ````
 
 ````python
@@ -284,7 +283,48 @@ def product_info(request):
         'count':len(products),
         'max_price':products.aggregate(max_price=Max('price'))['max_price']
     })
-    
+  
     return Response(serializer.data)
-    
+  
 ````
+
+## Generic Views | ListAPIView & RetrieveAPIView
+
+- The generic views provided by REST framework allow you to quickly build API views that map closely to your database models.
+  If the generic views don't suit the needs of your API, you can drop down to using the regular APIView class, or reuse the mixins and base classes used by the generic views to compose your own set of reusable generic views
+
+### ListAPIView
+
+- Used for **read-only** endpoints to represent a **collection of model instances**.Provides a `get` method handler.
+
+**Example**
+
+````python
+class ProductDetailsAPIView(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializers
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+````
+
+<img src="./images/all.png" alt="Picture" width="auto" height="auto">
+
+### RetrieveAPIView
+
+- Used for read-only endpoints to represent a single model instance.Provides a get method handler.
+
+````python
+class ProductDetailsAPIview(generics.RetrieveAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializers
+  
+````
+
+````python
+    path('generic/product/<int:pk>/', views.ProductDetailsAPIview.as_view(),name='product-details')  
+````
+
+<img src="./images/pk.png" alt="Picture" width="auto" height="auto">
+
