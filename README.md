@@ -87,7 +87,7 @@ class ProductSerializers(serializers.ModelSerializer):
 
 ## Nested Serializers , SerializerMethodField , Serializer Relations
 
-**Nested Serializers**
+**Nested Serializers.**
 
 - To easily join parent and child objects inside a single response body, you can use a nested serializer.
 
@@ -119,7 +119,7 @@ class orderSerializer(serializers.ModelSerializer):
 
 <img src="./images/s.png" alt="Picture" width="auto" height="auto">
 
-**Serializer Relations**
+**Serializer Relations.**
 
 -Relational fields are used to represent model relationships. They can be applied to ForeignKey, ManyToManyField and OneToOneField relationships, as well as to reverse relationships, and custom relationships such as GenericForeignKey.
 
@@ -159,7 +159,7 @@ class orderSerializer(serializers.ModelSerializer):
         )
 ````
 
-**Nested relationships**
+**Nested relationships.**
 
 - As opposed to previously discussed references to another entity, the referred entity can instead also be embedded or nested in the representation of the object that refers to it. Such nested relationships can be expressed by using serializers as fields.
   If the field is used to represent a to-many relationship, you should add the many=True flag to the serializer field.
@@ -178,7 +178,7 @@ class AlbumSerializer(serializers.ModelSerializer):
         fields = ['album_name', 'artist', 'tracks']
 ````
 
-**Responde**
+**Responde.**
 
 ````json
     {
@@ -193,7 +193,7 @@ class AlbumSerializer(serializers.ModelSerializer):
     }
 ````
 
-**Serializer fields**
+**Serializer fields.**
 
 - Serializer fields handle converting between primitive values and internal datatypes. They also deal with validating input values, as well as retrieving and setting the values from their parent objects.
 
@@ -212,7 +212,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
         )
 ````
 
-**SerializerMethodField**
+**SerializerMethodField.**
 
 ````python
 class orderSerializer(serializers.ModelSerializer):
@@ -233,7 +233,7 @@ class orderSerializer(serializers.ModelSerializer):
         )
 ````
 
-**Responde**
+**Responde.**
 
 ````json
     {
@@ -297,7 +297,7 @@ def product_info(request):
 
 - Used for **read-only** endpoints to represent a **collection of model instances**.Provides a `get` method handler.
 
-**Example**
+**Example.**
 
 ````python
 class ProductDetailsAPIView(generics.ListAPIView):
@@ -327,4 +327,24 @@ class ProductDetailsAPIview(generics.RetrieveAPIView):
 ````
 
 <img src="./images/pk.png" alt="Picture" width="auto" height="auto">
+
+### Dynamic Filtering | Overriding get_queryset() Method
+
+- The queryset that should be used for returning objects from this view. Typically, you must either set this attribute, or override the get_queryset() method. If you are overriding a view method, it is important that you call get_queryset() instead of accessing this property directly, as queryset will get evaluated once, and those results will be cached for all subsequent requests.
+
+- here in this example we geting the current login user order that's he made
+
+**Example.**
+
+````python
+class UserOrderListAPIView(generics.ListAPIView):
+    queryset = Order.objects.prefetch_related('items__product')
+    serializer_class = orderSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(user=self.request.user)
+````
+
+- super().get_queryset() calls the get_queryset method from ListView to fetch the default queryset.
 
